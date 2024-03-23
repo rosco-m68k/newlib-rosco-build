@@ -1,0 +1,9 @@
+[submodule "binutils-2.42"]
+	path = binutils-2.42
+	url = git@github.com:rosco-m68k/binutils-2.42.git
+[submodule "gcc-13.2.0"]
+	path = gcc-13.2.0
+	url = git@github.com:rosco-m68k/gcc-13.2.0.git
+[submodule "newlib-4.4.0.20231231"]
+	path = newlib-4.4.0.20231231
+	url = git@github.com:rosco-m68k/newlib-4.4.0.20231231.git
