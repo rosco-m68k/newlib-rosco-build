@@ -1,6 +1,10 @@
 ## Fetch submodules
 
 ```shell
+git submodule init
+```
+
+```shell
 git submodule update
 ```
 
@@ -14,6 +18,9 @@ sh linkem.sh
 
 ```shell
 mkdir build-all
+```
+
+```shell
 cd build-all
 ```
 
@@ -39,7 +46,13 @@ make install-binutils install-gas install-ld install-gcc install-target-libgcc i
 
 ```shell
 cd ..
-PATH="~/opt/cross-newlib/bin:$PATH" m68k-elf-rosco-gcc -o test.elf test.c
+```
+
+```shell
+PATH="$HOME/opt/cross-newlib/bin:$PATH" m68k-elf-rosco-gcc -o test.elf test.c
+```
+
+```shell
 m68k-elf-objcopy -O binary test.elf test.bin
 ```
 
