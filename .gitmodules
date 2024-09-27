@@ -4,3 +4,6 @@
 [submodule "newlib-4.4.0.20231231"]
     path = newlib-4.4.0.20231231
     url = https://github.com/rosco-m68k/newlib-4.4.0.20231231.git
+[submodule "gcc"]
+	path = gcc
+	url = https://github.com/rosco-m68k/gcc.git
