@@ -1,6 +1,6 @@
 #!/bin/bash
 
-component_dirs='binutils-2.42 gcc-13.2.0 newlib-4.4.0.20231231'
+component_dirs='binutils-2.42 gcc newlib-4.4.0.20231231'
 #component_dirs='binutils-2.18.50 gcc-4.2.2 gdb-6.8'
 unified_src=srcw
 
