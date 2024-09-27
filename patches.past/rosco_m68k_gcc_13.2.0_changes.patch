@@ -1,0 +1,174 @@
+diff --git a/config.sub b/config.sub
+index 38f3d037a..4258e6c1c 100755
+--- a/config.sub
++++ b/config.sub
+@@ -1749,7 +1749,7 @@ case $os in
+ 	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
+ 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
+ 	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx* | zephyr* \
+-	     | fiwix* )
++	     | fiwix* | rosco* )
+ 		;;
+ 	# This one is extra strict with allowed versions
+ 	sco3.2v2 | sco3.2v[4-9]* | sco5v6*)
+diff --git a/fixincludes/mkfixinc.sh b/fixincludes/mkfixinc.sh
+index df90720b7..f18217168 100755
+--- a/fixincludes/mkfixinc.sh
++++ b/fixincludes/mkfixinc.sh
+@@ -19,6 +19,8 @@ case $machine in
+     powerpc-*-rtems*   | \
+     powerpcle-*-eabisim* | \
+     powerpcle-*-eabi* | \
++    *-rosco* | \
++    *-*-rosco* | \
+     *-*-vxworks7* | \
+     *-musl* )
+ 	#  IF there is no include fixing,
+diff --git a/gcc/config.gcc b/gcc/config.gcc
+index 648b3dc21..383b76b0e 100644
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
+@@ -967,6 +967,12 @@ case ${target} in
+   gnu_ld=yes
+   default_use_cxa_atexit=yes
+   ;;
++*-*-rosco*)
++  gas=yes
++  gnu_ld=yes
++  default_use_cxa_atexit=yes
++  use_gcc_stdint=provide
++  ;;
+ *-*-rtems*)
+   case ${enable_threads} in
+     "" | yes | rtems) thread_file='rtems' ;;
+@@ -2355,6 +2361,14 @@ m68k-*-linux*)			# Motorola m68k's running GNU/Linux
+ 	tm_defines="${tm_defines} MOTOROLA=1"
+ 	tmake_file="${tmake_file} m68k/t-floatlib m68k/t-linux m68k/t-mlibs"
+ 	;;
++m68k-*-rosco*)
++	default_m68k_cpu=68000
++	default_cf_cpu=5206
++	tmake_file="${tmake_file} m68k/t-floatlib m68k/t-m68kbare m68k/t-crtstuff m68k/t-rtems m68k/t-mlibs"
++	tm_file="${tm_file} m68k/m68k-none.h m68k/m68kelf.h elfos.h m68k/m68kemb.h rosco/rosco.h newlib-stdint.h"
++	tm_defines="${tm_defines} MOTOROLA=1 ROSCO_M68K=1"
++	extra_options="${extra_options} rosco/rosco.opt"
++	;;
+ m68k-*-rtems*)
+ 	default_m68k_cpu=68020
+ 	default_cf_cpu=5206
+diff --git a/gcc/config/rosco/rosco.h b/gcc/config/rosco/rosco.h
+new file mode 100644
+index 000000000..7cba5660e
+--- /dev/null
++++ b/gcc/config/rosco/rosco.h
+@@ -0,0 +1,29 @@
++#undef TARGET_ROSCO
++#define TARGET_ROSCO 1
++
++#undef ROSCO_M68K
++#define ROSCO_M68K 1
++ 
++/* Default arguments for the m68k-elf-rosco-gcc toolchain 
++   - link newlib BSP, GDB support optionally, and use our link script... */
++#undef LIB_SPEC
++#define LIB_SPEC "%{!g:-lc -lrosco -lc} %{g:-lg -lrosco %{mgdb:-lrosco_gdb} -lg} %{bin:--oformat=binary} %{!T*:-T hugerom_rosco_m68k_program.ld%s}" 
++ 
++/* Files that are linked before user code.
++   The %s tells GCC to look for these files in the library directory. */
++#undef STARTFILE_SPEC
++#define STARTFILE_SPEC "%{g:%{!mgdb:crt0.o%s} %{mgdb:gcrt0.o%s}} %{!g:crt0.o%s} crti.o%s crtbegin.o%s"
++ 
++/* Files that are linked after user code. */
++#undef ENDFILE_SPEC
++#define ENDFILE_SPEC "crtend.o%s crtn.o%s"
++ 
++/* Additional predefined macros. */
++#undef TARGET_OS_CPP_BUILTINS
++#define TARGET_OS_CPP_BUILTINS()             \
++  do {                                       \
++    builtin_define ("__rosco_m68k__");       \
++    builtin_define ("ROSCO_M68K");           \
++    builtin_assert ("system=rosco_m68k");    \
++  } while(0);
++
+diff --git a/gcc/config/rosco/rosco.opt b/gcc/config/rosco/rosco.opt
+new file mode 100644
+index 000000000..faff960c2
+--- /dev/null
++++ b/gcc/config/rosco/rosco.opt
+@@ -0,0 +1,31 @@
++; Machine-specific options for rosco-m68k target
++;
++; Copyright (C) 2010-2023 Free Software Foundation, Inc.
++;
++; This file is part of GCC.
++;
++; GCC is free software; you can redistribute it and/or modify it under
++; the terms of the GNU General Public License as published by the Free
++; Software Foundation; either version 3, or (at your option) any later
++; version.
++;
++; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
++; WARRANTY; without even the implied warranty of MERCHANTABILITY or
++; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++; for more details.
++;
++; You should have received a copy of the GNU General Public License
++; along with GCC; see the file COPYING3.  If not see
++; <http://www.gnu.org/licenses/>.
++
++; See the GCC internals manual (options.texi) for a description of this file's format.
++
++; Please try to keep this file in ASCII collating order.
++
++bin
++Target RejectNegative
++Build a rosco_m68k uploadable binary directly instead of an elf
++
++mgdb
++Target RejectNegative
++Include GDB remote debugging support (requires -g)
+\ No newline at end of file
+diff --git a/libgcc/config.host b/libgcc/config.host
+index 9d7212028..2f2083fd9 100644
+--- a/libgcc/config.host
++++ b/libgcc/config.host
+@@ -306,6 +306,10 @@ case ${host} in
+       ;;
+   esac
+   ;;
++*-*-rosco*)
++  tmake_file="$tmake_file t-rosco"
++  extra_parts="crtbegin.o crtend.o"
++  ;;
+ *-*-rtems*)
+   tmake_file="$tmake_file t-rtems"
+   extra_parts="crtbegin.o crtend.o"
+@@ -983,6 +987,10 @@ m68k-*-linux*)			# Motorola m68k's running GNU/Linux
+ 	fi
+ 	md_unwind_header=m68k/linux-unwind.h
+ 	;;
++m68k-*-rosco*)
++	tmake_file="$tmake_file m68k/t-floatlib"
++	extra_parts="$extra_parts crti.o crtn.o"
++	;;
+ m68k-*-rtems*)
+ 	tmake_file="$tmake_file m68k/t-floatlib"
+ 	extra_parts="$extra_parts crti.o crtn.o"
+diff --git a/libstdc++-v3/crossconfig.m4 b/libstdc++-v3/crossconfig.m4
+index b3269cb88..2f2963497 100644
+--- a/libstdc++-v3/crossconfig.m4
++++ b/libstdc++-v3/crossconfig.m4
+@@ -236,6 +236,12 @@ case "${host}" in
+     AC_DEFINE(HAVE_SINHF)
+     AC_DEFINE(HAVE_SINHL)
+     ;;
++  *-rosco*)
++    GLIBCXX_CHECK_COMPILER_FEATURES
++    GLIBCXX_CHECK_LINKER_FEATURES
++    GLIBCXX_CHECK_MATH_SUPPORT
++    GLIBCXX_CHECK_STDLIB_SUPPORT
++    ;;
+   *-tpf)
+     SECTION_FLAGS='-ffunction-sections -fdata-sections'
+     SECTION_LDFLAGS='-Wl,--gc-sections $SECTION_LDFLAGS'
