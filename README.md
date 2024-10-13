@@ -27,7 +27,7 @@ cd build-all
 ## Configure
 
 ```shell
-../srcw/configure --target=m68k-elf-rosco --enable-languages=c,c++ --with-newlib --with-arch=m68k --with-cpu=m68000 --prefix="$HOME/opt/cross-newlib" --disable-debug --disable-dependency-tracking --disable-silent-rules --disable-nls
+../srcw/configure --target=m68k-elf-rosco --enable-languages=c,c++ --with-newlib --with-arch=m68k --with-cpu=m68000 --prefix="$HOME/opt/cross-newlib" --disable-debug --disable-dependency-tracking --disable-silent-rules --disable-nls --with-debug-prefix-map="../../../srcw='$(readlink -f ..)/srcw'" --with-debug-prefix-map="../../../../srcw='$(readlink -f ..)/srcw'" --with-debug-prefix-map="../../../../../srcw='$(readlink -f ..)/srcw'"
 ```
 
 ## Build (takes a while)
