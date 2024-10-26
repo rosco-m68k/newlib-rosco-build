@@ -7,3 +7,6 @@
 [submodule "gcc"]
 	path = gcc
 	url = https://github.com/rosco-m68k/gcc.git
+[submodule "Xosera"]
+	path = Xosera
+	url = https://github.com/Xarklabs/Xosera
